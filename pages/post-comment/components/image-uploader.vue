@@ -2,13 +2,9 @@
   <view class="image-uploader">
     <view class="images-grid">
       <!-- 已上传图片 -->
-      <view 
-        v-for="(image, index) in imageList" 
-        :key="index"
-        class="image-item"
-      >
-        <image 
-          :src="image" 
+      <view v-for="(image, index) in imageList" :key="index" class="image-item">
+        <image
+          :src="image"
           mode="aspectFill"
           class="image"
           @click="previewImage(index)"
@@ -17,9 +13,9 @@
           <text class="delete-icon">×</text>
         </view>
       </view>
-      
+
       <!-- 添加按钮 -->
-      <view 
+      <view
         v-if="imageList.length < maxCount"
         class="add-btn"
         @click="chooseImage"
@@ -35,74 +31,94 @@
 </template>
 
 <script>
+import { upload } from "@/api/common";
+import storage from '@/utils/storage.js'
 
 export default {
-  name: 'ImageUploader',
-  
+  name: "ImageUploader",
+
   props: {
     images: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     maxCount: {
       type: Number,
-      default: 9
-    }
+      default: 9,
+    },
   },
-  
+
   data() {
     return {
-      imageList: [...this.images]
-    }
+      imageList: [...this.images],
+    };
   },
-  
+
   watch: {
     images(val) {
-      this.imageList = [...val]
-    }
+      this.imageList = [...val];
+    },
   },
-  
+
   methods: {
+    uploadImg(filePaths) {
+      uni.uploadFile({
+        url: upload,
+        filePath: filePaths,
+        name: "file",
+        header: {
+          accessToken: storage.getAccessToken(),
+        },
+        success: (uploadFileRes) => {
+          let data = JSON.parse(uploadFileRes.data);
+          if (data.code == 200) {
+           
+          } else {
+            this.$u.toast("上传失败，请稍后重试");
+          }
+        },
+      });
+    },
     chooseImage() {
-      const count = this.maxCount - this.imageList.length
-      
+      const count = this.maxCount - this.imageList.length;
+
       uni.chooseImage({
         count,
-        sizeType: ['compressed'],
-        sourceType: ['album', 'camera'],
+        sizeType: ["compressed"],
+        sourceType: ["album", "camera"],
         success: (res) => {
-          this.imageList.push(...res.tempFilePaths)
-          this.updateImages()
-        }
-      })
+          this.imageList.push(...res.tempFilePaths);
+          this.updateImages();
+        },
+      });
     },
-    
+
     deleteImage(index) {
       uni.showModal({
-        title: '提示',
-        content: '确定删除这张照片吗？',
+        title: "提示",
+        content: "确定删除这张照片吗？",
         success: (res) => {
           if (res.confirm) {
-            this.imageList.splice(index, 1)
-            this.updateImages()
+            this.imageList.splice(index, 1);
+            this.updateImages();
           }
-        }
-      })
+        },
+      });
     },
-    
+
     previewImage(index) {
       uni.previewImage({
         urls: this.imageList,
-        current: index
-      })
+        current: index,
+      });
     },
-    
+
     updateImages() {
-      this.$emit('update:images', this.imageList)
-      this.$emit('change', this.imageList)
-    }
-  }
-}
+      this.$emit("update:images", this.imageList);
+      this.$emit("change", this.imageList);
+    },
+  },
+};
 </script>
 
 <style scoped>
@@ -180,7 +196,7 @@ export default {
 }
 
 .camera-body::before {
-  content: '';
+  content: "";
   width: 20rpx;
   height: 8rpx;
   background-color: #ccc;
