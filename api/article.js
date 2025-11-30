@@ -1,0 +1,64 @@
+/**
+ * 文章相关API
+ */
+
+import {http,Method} from '@/utils/request.js';
+import api from '@/config/api.js';
+
+/**
+ * 获取文章分类
+ */
+export function getArticleCategoryTree() {
+    return http.request({
+        url: `/other/article/articleCategory/list`,
+        method: Method.GET
+    });
+}
+
+/**
+ * 获取文章分类下的文章列表
+ */
+export function getArticlePageByCategory(params) {
+    return http.request({
+        url: `/other/article`,
+        method: Method.GET,
+        params
+    });
+}
+
+/**
+ * 获取某个分类的文章列表
+ * @param category_type
+ */
+export function getArticleCategory(category_type) {
+  return http.request({
+    url: `${api.base}/pages/article-categories`,
+    method: Method.GET,
+    params: {category_type},
+  });
+}
+
+/**
+ * 获取文章详情
+ * @param type
+ */
+export function getArticleDetail(type) {
+  return http.request({
+    url: `/other/article/get/${type}`,
+    method: Method.GET,
+  });
+}
+
+/**
+ * 获取文章详情
+ * @param type
+ */
+ export function getArticleDetailByType(type) {
+  return http.request({
+    url: `/other/article/type/${type}`,
+    method: Method.GET,
+  });
+}
+
+
+
