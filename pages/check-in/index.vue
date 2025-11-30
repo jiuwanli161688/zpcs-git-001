@@ -90,6 +90,7 @@
 
 <script>
 import UserRating from "./../merchant-detail/components/user-rating.vue";
+import { createCheckIn, getConsecutiveDays } from "@/api/shop/list/detail.js";
 
 export default {
   components: {
@@ -99,16 +100,14 @@ export default {
     return {
       statusBarHeight: 0,
       merchantId: "",
-      checkInCount: 8,
-      rating: 3,
-      merchantName: "拜勒福·健康生活养生馆",
+      checkInCount: 0,
+      rating: 0,
+      merchantName: "",
       photoUrl: "",
       defaultPhoto: "/static/cbd/shop/detail/checkin-def.png",
       starLabels: ["很糟糕", "比较差", "一般般", "还可以", "很满意"],
       currentDate: "",
       currentWeekday: "",
-
-      // 拍照打卡
       originalImage: "",
       canvasWidth: 300,
       canvasHeight: 300,
@@ -116,6 +115,8 @@ export default {
       uploading: false,
       uploadProgress: 0,
       uploadResult: "",
+      latitude: 0,
+      longitude: 0,
     };
   },
   created() {
@@ -134,10 +135,10 @@ export default {
     }
 
     this.initDateTime();
+    this.getLocation();
+    this.loadCheckInCount();
   },
-
   methods: {
-    // 初始化日期时间
     initDateTime() {
       const date = new Date();
       const month = date.getMonth() + 1;
@@ -155,29 +156,24 @@ export default {
       ];
       this.currentWeekday = weekdays[date.getDay()];
     },
-
-    // 返回上一页
     goBack() {
       uni.navigateBack();
     },
-    // 查看打卡记录
     viewRecords() {
       uni.navigateTo({
         url: `/pages/check-in-album/index?merchantId=${this.merchantId}`,
       });
     },
-
-    // 分享打卡
     shareCheckIn() {
       uni.share({
         provider: "weixin",
-        type: 0, // 0 是图文
+        type: 0,
         title: "我在点评中品维度商圈打卡啦！",
         summary: "快来看看我在这里的打卡点评吧～",
         imageUrl: this.photoUrl || this.defaultPhoto,
         miniProgram: {
-          id: "", // APP的微信小程序ID，若有小程序跳转需求可填，否则可省略
-          path: "", // 跳转的小程序页面路径
+          id: "",
+          path: "",
         },
         success: () => {
           uni.showToast({
@@ -194,7 +190,6 @@ export default {
         },
       });
     },
-    // 选择图片
     takePhoto() {
       uni.chooseImage({
         count: 1,
@@ -206,12 +201,9 @@ export default {
         },
       });
     },
-
-    // 添加水印
     addWatermark(imagePath) {
       uni.showLoading({ title: "处理中..." });
 
-      // 获取图片信息
       uni.getImageInfo({
         src: imagePath,
         success: (imageInfo) => {
@@ -219,7 +211,6 @@ export default {
           this.canvasWidth = imageInfo.width;
           this.canvasHeight = imageInfo.height;
 
-          // 等待canvas尺寸更新
           this.$nextTick(() => {
             setTimeout(() => {
               this.drawWatermark(imagePath, imageInfo.width, imageInfo.height);
@@ -232,29 +223,22 @@ export default {
         },
       });
     },
-
-    // 绘制水印
     drawWatermark(imagePath, width, height) {
       console.log("drawWatermark绘制图", imagePath, width, height);
 
       const ctx = uni.createCanvasContext("watermarkCanvas", this);
 
-      // 绘制原图
       ctx.drawImage(imagePath, 0, 0, width, height);
 
-      // 水印配置
-      const padding = width * 0.03; // 边距
-      const fontSize = Math.max(width * 0.04, 24); // 字体大小
-      const lineHeight = fontSize * 1.4; // 行高
+      const padding = width * 0.03;
+      const fontSize = Math.max(width * 0.04, 24);
+      const lineHeight = fontSize * 1.4;
 
-      // 获取水印文字
       const watermarkLines = this.getWatermarkText();
 
-      // 计算水印区域
       const watermarkHeight = lineHeight * watermarkLines.length + padding * 2;
       const watermarkY = height - watermarkHeight - padding;
 
-      // 绘制水印文字（白色带阴影，确保可见性）
       ctx.setFillStyle("#FFFFFF");
       ctx.setFontSize(fontSize);
       ctx.setShadow(2, 2, 4, "rgba(0,0,0,0.5)");
@@ -264,7 +248,6 @@ export default {
         ctx.fillText(line, padding * 2, textY);
       });
 
-      // 绘制完成后导出图片
       ctx.draw(false, () => {
         setTimeout(() => {
           uni.canvasToTempFilePath(
@@ -278,8 +261,8 @@ export default {
               quality: 0.9,
               success: (res) => {
                 uni.hideLoading();
-                // 本地图片，上传服务器后替换
                 this.photoUrl = res.tempFilePath;
+                this.uploadAndCheckIn(res.tempFilePath);
               },
               fail: (err) => {
                 console.error("导出失败:", err);
@@ -292,17 +275,13 @@ export default {
         }, 300);
       });
     },
-
-    // 获取水印文字内容
     getWatermarkText() {
       const now = new Date();
 
-      // 第一行：日期 MM/DD
       const month = String(now.getMonth() + 1).padStart(2, "0");
       const day = String(now.getDate()).padStart(2, "0");
       const dateLine = `${month}/${day}`;
 
-      // 第二行：星期几
       const weekDays = [
         "星期日",
         "星期一",
@@ -314,13 +293,87 @@ export default {
       ];
       const weekLine = weekDays[now.getDay()];
 
-      // 第三行：位置信息
       const locationLine = this.locationInfo;
 
       return [dateLine, weekLine, locationLine];
     },
+    getLocation() {
+      uni.getLocation({
+        type: "gcj02",
+        success: (res) => {
+          this.latitude = res.latitude;
+          this.longitude = res.longitude;
+          this.locationInfo = this.merchantName || "打卡位置";
+        },
+        fail: () => {
+          this.locationInfo = this.merchantName || "未知位置";
+        },
+      });
+    },
+    async loadCheckInCount() {
+      if (!this.merchantId) return;
+      try {
+        const userInfo = uni.getStorageSync("userInfo") || {};
+        const res = await getConsecutiveDays({
+          memberId: userInfo.id || "",
+          storeId: this.merchantId,
+        });
+        if (res.data.success) {
+          this.checkInCount = res.data.result || 0;
+        }
+      } catch (error) {
+        console.error("获取打卡天数失败", error);
+      }
+    },
+    async submitCheckIn(photoUrl) {
+      try {
+        uni.showLoading({ title: "打卡中..." });
+        const res = await createCheckIn({
+          position: this.merchantName,
+          latitudeAndLongitude: `${this.latitude},${this.longitude}`,
+          area: this.locationInfo,
+          photo: photoUrl,
+          storeId: this.merchantId,
+        });
+        uni.hideLoading();
+        if (res.data.success) {
+          this.checkInCount++;
+          uni.showToast({ title: "打卡成功", icon: "success" });
+        } else {
+          uni.showToast({ title: res.data.message || "打卡失败", icon: "none" });
+        }
+      } catch (error) {
+        uni.hideLoading();
+        uni.showToast({ title: "打卡失败", icon: "none" });
+      }
+    },
+    async uploadAndCheckIn(filePath) {
+      try {
+        uni.showLoading({ title: "上传中..." });
+        const uploadRes = await new Promise((resolve, reject) => {
+          uni.uploadFile({
+            url: `${this.$config.baseUrl}/common/upload`,
+            filePath: filePath,
+            name: "file",
+            success: (res) => {
+              const data = JSON.parse(res.data);
+              if (data.success) {
+                resolve(data.result);
+              } else {
+                reject(new Error(data.message));
+              }
+            },
+            fail: reject,
+          });
+        });
+        uni.hideLoading();
+        this.submitCheckIn(uploadRes);
+      } catch (error) {
+        uni.hideLoading();
+        uni.showToast({ title: "上传失败", icon: "none" });
+      }
+    },
   },
-
   onShareAppMessage() {
     return {
       title: `我在${this.merchantName}打卡啦！这是我今年第${this.checkInCount}次打卡`,
@@ -328,7 +381,6 @@ export default {
       imageUrl: this.photoUrl || this.defaultPhoto,
     };
   },
-
   onShareTimeline() {
     return {
       title: `我在${this.merchantName}打卡啦！`,
@@ -373,7 +425,6 @@ export default {
   font-weight: 300;
 }
 
-/* 标题区域 */
 .title-section {
   margin: 70rpx 0 30rpx 20rpx;
 }
@@ -397,7 +448,6 @@ export default {
   display: block;
 }
 
-/* 评分区域 */
 .rating-section {
   margin-bottom: 20rpx;
   margin-top: -20rpx;
@@ -432,7 +482,6 @@ export default {
   color: #999;
 }
 
-/* 照片卡片 */
 .photo-card {
   width: calc(100vw - 40rpx);
   border-radius: 20rpx;
@@ -483,7 +532,6 @@ export default {
   color: #fff;
 }
 
-/* 拍照按钮 */
 .photo-action {
   display: flex;
   flex-direction: column;
@@ -501,7 +549,6 @@ export default {
   color: #999;
 }
 
-/* 操作按钮 */
 .action-buttons {
   display: flex;
   justify-content: center;

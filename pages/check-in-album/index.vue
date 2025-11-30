@@ -4,20 +4,25 @@
     <view class="photo-grid">
       <view
         v-for="(photo, index) in photoList"
-        :key="index"
+        :key="photo.id"
         class="photo-item"
         @click="previewPhoto(index)"
       >
         <image
           class="photo-image"
-          :src="photo.url"
+          :src="photo.imageUrl"
           mode="aspectFill"
         />
       </view>
     </view>
 
+    <!-- 加载更多 -->
+    <view v-if="hasMore" class="load-more" @click="loadMore">
+      <text>{{ loading ? '加载中...' : '加载更多' }}</text>
+    </view>
+
     <!-- 空状态 -->
-    <view v-if="photoList.length === 0" class="empty-state">
+    <view v-if="!loading && photoList.length === 0" class="empty-state">
       <uni-icons class="empty-icon" type="camera" size="30" color="#999999"></uni-icons>
       <text class="empty-text">暂无打卡照片</text>
     </view>
@@ -25,12 +30,20 @@
 </template>
 
 <script>
+import { getApprovedAlbum } from "@/api/shop/list/detail.js";
 
 export default {
+  components: {
+  },
   data() {
     return {
       merchantId: '',
-      photoList: []
+      photoList: [],
+      pageNumber: 1,
+      pageSize: 10,
+      total: 0,
+      loading: false,
+      hasMore: true,
     }
   },
   
@@ -40,33 +53,64 @@ export default {
     }
     this.loadPhotos()
   },
+
+  onPullDownRefresh() {
+    this.pageNumber = 1;
+    this.photoList = [];
+    this.hasMore = true;
+    this.loadPhotos().then(() => {
+      uni.stopPullDownRefresh();
+    });
+  },
+
+  onReachBottom() {
+    if (this.hasMore && !this.loading) {
+      this.loadMore();
+    }
+  },
   
   methods: {
-    // 返回上一页
     goBack() {
       uni.navigateBack()
     },
     
-    // 加载照片列表
-    loadPhotos() {
-      // 模拟数据，实际应从后端接口获取
-      this.photoList = [
-        { url: '/static/logo.png' },
-        { url: '/static/images/sample2.jpg' },
-        { url: '/static/images/sample3.jpg' },
-        { url: '/static/images/sample4.jpg' },
-        { url: '/static/images/sample5.jpg' },
-        { url: '/static/images/sample6.jpg' },
-        { url: '/static/images/sample7.jpg' }
-      ]
+    async loadPhotos() {
+      if (!this.merchantId || this.loading) return;
       
-      // TODO: 实际应调用后端接口
-     
+      this.loading = true;
+      try {
+        const res = await getApprovedAlbum({
+          storeId: this.merchantId,
+          pageNumber: this.pageNumber,
+          pageSize: this.pageSize,
+        });
+        console.log('加载', res)
+        if (res.data.success && res.data.result) {
+          const records = res.data.result.records || [];
+          if (this.pageNumber === 1) {
+            this.photoList = records;
+          } else {
+            this.photoList = [...this.photoList, ...records];
+          }
+          this.total = res.data.result.total || 0;
+          this.hasMore = this.photoList.length < this.total;
+        }
+      } catch (error) {
+        uni.showToast({ title: "加载失败", icon: "none" });
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    loadMore() {
+      if (this.hasMore && !this.loading) {
+        this.pageNumber++;
+        this.loadPhotos();
+      }
     },
     
-    // 预览照片
     previewPhoto(index) {
-      const urls = this.photoList.map(photo => photo.url)
+      const urls = this.photoList.map(photo => photo.imageUrl)
       uni.previewImage({
         urls: urls,
         current: index
@@ -121,5 +165,13 @@ export default {
 .empty-text {
   font-size: 28rpx;
   color: #999;
+}
+
+/* 新增加载更多样式 */
+.load-more {
+  text-align: center;
+  padding: 30rpx;
+  color: #999;
+  font-size: 26rpx;
 }
 </style>

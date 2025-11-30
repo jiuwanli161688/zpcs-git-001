@@ -5,8 +5,9 @@
 
     <!-- 星级评分 -->
     <star-rating
-      :value.sync="rating"
+      :rating="rating"
       :labels="ratingLabels"
+      @rate="val => rating = val"
       class="rating-section"
     />
 
@@ -41,6 +42,7 @@ import StarRating from "./components/star-rating.vue";
 import TextInput from "./components/text-input.vue";
 import ImageUploader from "./components/image-uploader.vue";
 import TipsModal from "./components/tips-modal.vue";
+import { createEvaluation, isRecentDays } from "@/api/shop/list/detail.js";
 
 export default {
   name: "ReviewPage",
@@ -55,8 +57,9 @@ export default {
 
   data() {
     return {
-      shopName: "拜勒福·健康生活养生馆",
-      rating: 3.3,
+      storeId: "",
+      shopName: "",
+      rating: 0,
       reviewText: "",
       images: [],
       showTips: false,
@@ -75,16 +78,25 @@ export default {
     };
   },
 
+  onLoad(options) {
+    if (options.id) {
+      this.storeId = options.id;
+    }
+    if (options.name) {
+      this.shopName = decodeURIComponent(options.name);
+    }
+  },
+
   methods: {
     goBack() {
       uni.navigateBack();
     },
 
-    handleSubmit() {
+    async handleSubmit() {
       if (!this.validateForm()) {
         return;
       }
-      this.submitReview();
+      await this.checkRecentComment();
     },
 
     validateForm() {
@@ -107,6 +119,31 @@ export default {
       return true;
     },
 
+    async checkRecentComment() {
+      try {
+        uni.showLoading({ title: "检查中..." });
+        const res = await isRecentDays();
+        uni.hideLoading();
+        
+        if (res.data.success && res.data.result) {
+          // 已评论过
+          uni.showToast({
+            title: "24小时内已评论过，请稍后再试",
+            icon: "none",
+          });
+          return;
+        }
+        // 未评论过，可以提交
+        this.submitReview();
+      } catch (error) {
+        uni.hideLoading();
+        uni.showToast({
+          title: "检查失败，请重试",
+          icon: "none",
+        });
+      }
+    },
+
     async submitReview() {
       uni.showLoading({ title: "提交中..." });
 
@@ -114,22 +151,29 @@ export default {
         // 上传图片
         const imageUrls = await this.uploadImages();
 
-        // 提交评价
-        const result = await this.submitData({
-          rating: this.rating,
+        const res = await createEvaluation({
+          grade: this.rating,
           content: this.reviewText,
-          images: imageUrls,
+          images: imageUrls.join(","),
+          storeId: this.storeId,
         });
 
         uni.hideLoading();
-        uni.showToast({
-          title: "评价成功",
-          icon: "success",
-        });
-
-        setTimeout(() => {
-          uni.navigateBack();
-        }, 1500);
+        
+        if (res.data.success) {
+          uni.showToast({
+            title: "评价成功",
+            icon: "success",
+          });
+          setTimeout(() => {
+            uni.navigateBack();
+          }, 1500);
+        } else {
+          uni.showToast({
+            title: res.data.message || "提交失败",
+            icon: "none",
+          });
+        }
       } catch (error) {
         uni.hideLoading();
         uni.showToast({
@@ -140,17 +184,22 @@ export default {
     },
 
     async uploadImages() {
+      console.log('开始上传', this.images)
       if (this.images.length === 0) return [];
 
       const uploadPromises = this.images.map((image) => {
         return new Promise((resolve, reject) => {
           uni.uploadFile({
-            url: "YOUR_UPLOAD_API",
+            url: `${this.$config?.baseUrl || ""}/common/upload`,
             filePath: image,
             name: "file",
             success: (res) => {
               const data = JSON.parse(res.data);
-              resolve(data.url);
+              if (data.success) {
+                resolve(data.result);
+              } else {
+                reject(new Error(data.message));
+              }
             },
             fail: reject,
           });
@@ -158,24 +207,6 @@ export default {
       });
 
       return Promise.all(uploadPromises);
-    },
-
-    async submitData(data) {
-      return new Promise((resolve, reject) => {
-        uni.request({
-          url: "YOUR_REVIEW_API",
-          method: "POST",
-          data,
-          success: (res) => {
-            if (res.data.code === 200) {
-              resolve(res.data);
-            } else {
-              reject(new Error(res.data.message));
-            }
-          },
-          fail: reject,
-        });
-      });
     },
   },
 };

@@ -18,6 +18,7 @@
 
       <!-- 用户评分区 -->
       <user-rating
+        v-if="showRating"
         :days="checkInDays"
         :current-rating="userRating"
         @rate="handleRate"
@@ -46,10 +47,6 @@
     />
 
     <!-- 添加打卡失败弹窗组件 -->
-    <!-- <check-in-fail-modal
-      :visible="showCheckInFailModal"
-      @close="showCheckInFailModal = false"
-    /> -->
     <check-in-fail-modal
       v-model="showCheckInFailModal"
       title="打卡失败"
@@ -66,6 +63,7 @@ import UserRating from "./components/user-rating.vue";
 import ReviewSection from "./components/review-section.vue";
 import BottomActions from "./components/bottom-actions.vue";
 import CheckInFailModal from "./components/check-in-fail-modal.vue";
+import { getShopDetail, getEvaluation, getRecentCheckInDays } from "@/api/shop/list/detail.js";
 
 export default {
   components: {
@@ -74,32 +72,33 @@ export default {
     UserRating,
     ReviewSection,
     BottomActions,
-    CheckInFailModal, // 注册打卡失败弹窗组件
+    CheckInFailModal,
   },
 
   data() {
     return {
       merchantId: "",
       merchantData: {
-        name: "拜勒福·健康生活养生馆",
+        name: "",
         images: ["/static/cbd/shop/detail/test-img.png"],
-        rating: 3.8,
-        distance: 365,
-        categories: ["东北菜", "亦庄"],
-        status: "营业中",
-        hours: "06:00 - 21:30",
-        address: "浙江省杭州市临安区锦城街道城中街708号",
-        phone: "13800138000",
+        rating: 0,
+        distance: 0,
+        categories: [],
+        status: "",
+        hours: "",
+        address: "",
+        phone: "",
       },
-      checkInDays: 24,
+      checkInDays: 0,
+      showRating: false, // 控制用户评分区显示
       userRating: 0,
       reviewData: {
         total: 0,
         list: [],
       },
       reviewLoading: false,
-      showCheckInFailModal: false, // 控制打卡失败弹窗显示
-      userCheckInCount: 8, // 用户今年打卡次数
+      showCheckInFailModal: false,
+      userCheckInCount: 0,
     };
   },
 
@@ -107,13 +106,30 @@ export default {
     this.merchantId = options.id || "";
     this.loadMerchantData();
     this.loadReviewData();
+    this.loadRecentCheckInDays();
   },
 
   methods: {
-    // 加载商家数据
     async loadMerchantData() {
+      if (!this.merchantId) return;
       try {
-        // TODO: 调用接口获取商家详情
+        const res = await getShopDetail(this.merchantId);
+        if (res.data.success && res.data.result) {
+          const data = res.data.result;
+          this.merchantData = {
+            name: data.storeName || "",
+            images: data.images || ["/static/cbd/shop/detail/test-img.png"],
+            rating: data.avgScore || 0,
+            distance: 0,
+            categories: [],
+            status: data.storeDisable === "OPEN" ? "营业中" : "已打烊",
+            hours: `${data.businessStartTime || "00:00"} - ${data.businessEndTime || "00:00"}`,
+            address: data.storeAddressDetail || "",
+            addressPath: data.storeAddressPath || "",
+            phone: data.linkPhone || "",
+          };
+          this.checkInDays = data.recentClockInDays || 0;
+        }
       } catch (error) {
         uni.showToast({
           title: "加载失败，请重试",
@@ -122,41 +138,49 @@ export default {
       }
     },
 
-    // 加载评价数据
     async loadReviewData() {
+      if (!this.merchantId) return;
       this.reviewLoading = true;
       try {
-        // TODO: 调用接口获取评价列表
-
-        // 模拟数据
-        setTimeout(() => {
+        const res = await getEvaluation({
+          storeId: this.merchantId,
+          pageNumber: 1,
+          pageSize: 5,
+        });
+        if (res.data.success && res.data.result) {
           this.reviewData = {
-            total: 3110,
-            list: [
-              {
-                id: 1,
-                avatar: "/static/cbd/shop/detail/test-img.png",
-                nickname: "刘大脑袋",
-                time: "2小时前",
-                rating: 4,
-                content:
-                  "紫光园口碑特别好，不管是彩品还是服务都是我心目中的天花板了。首先说说环境，免费只停车，交通方便，清真也吃这放心。紫光园口碑特别好，不管是彩品还是服务都是我心目中的天花板了。首先说说环境，免费只停车，交通方便。",
-                images: [
-                  "/static/cbd/shop/detail/test-img.png",
-                  "/static/cbd/shop/detail/test-img.png",
-                  "/static/cbd/shop/detail/test-img.png",
-                ],
-              },
-            ],
+            total: res.data.result.total || 0,
+            list: (res.data.result.records || []).map(item => ({
+              id: item.id,
+              avatar: item.memberProfile || "/static/cbd/shop/detail/test-img.png",
+              nickname: item.memberName || "匿名用户",
+              time: item.createTime || "",
+              rating: Number(item.grade) || 0,
+              content: item.content || "",
+              images: item.images ? item.images.split(",") : [],
+            })),
           };
-          this.reviewLoading = false;
-        }, 500);
+        }
       } catch (error) {
-        this.reviewLoading = false;
         uni.showToast({
           title: "加载评价失败",
           icon: "none",
         });
+      } finally {
+        this.reviewLoading = false;
+      }
+    },
+
+    async loadRecentCheckInDays() {
+      if (!this.merchantId) return;
+      try {
+        const res = await getRecentCheckInDays({ storeId: this.merchantId });
+        if (res.data.success && res.data.result > 0) {
+          this.checkInDays = res.data.result;
+          this.showRating = true;
+        }
+      } catch (error) {
+        console.error("获取打卡天数失败", error);
       }
     },
 
@@ -206,7 +230,7 @@ export default {
     async handleRate(rating) {
       this.userRating = rating;
       try {
-        // TODO: 调用接口提交评分
+        // 调用接口提交评分
         // await this.$api.submitRating(this.merchantId, rating)
         uni.showToast({
           title: "评分成功",

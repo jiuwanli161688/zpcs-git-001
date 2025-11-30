@@ -1,8 +1,6 @@
 <template>
   <view class="user-rating">
-    <view v-if="false" class="rating-title">
-      <text>{{ days }}天前你在这里打卡，体验如何？</text>
-    </view>
+    <slot name="top"></slot>
     
     <view class="rating-stars">
       <view 
@@ -11,8 +9,8 @@
         class="star-item"
         @click="handleRate(i)"
       >
-        <view class="star-icon" :class="i <= currentRating ? 'star-active' : ''">
-          <uni-icons type="star-filled" size="64rpx" :color="i <= currentRating ? '#ff5757' : '#e0e0e0'"></uni-icons>
+        <view class="star-icon" :class="i <= rating ? 'star-active' : ''">
+          <uni-icons type="star-filled" size="80rpx" :color="i <= rating ? '#ff5757' : '#e0e0e0'"></uni-icons>
         </view>
         <text class="star-label">{{ labels[i - 1] }}</text>
       </view>
@@ -23,11 +21,7 @@
 <script>
 export default {
   props: {
-    days: {
-      type: Number,
-      default: 0
-    },
-    currentRating: {
+    rating: {
       type: Number,
       default: 0
     }
@@ -65,6 +59,7 @@ export default {
   .rating-stars {
     display: flex;
     justify-content: space-between;
+    padding: 0 20rpx;
     
     .star-item {
       display: flex;
@@ -92,6 +87,7 @@ export default {
       .star-label {
         color: #999;
         font-size: 24rpx;
+        margin-top: -16rpx;
       }
     }
   }
