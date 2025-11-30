@@ -100,6 +100,18 @@ export function createEvaluation({ grade, content, images, storeId }) {
     params: { grade, content, images, storeId },
   });
 }
+/**
+ * 最近24小时内是否评论过（新增评论时，先校验，若有评论过，则不可以提交）
+ * @param 
+ * @returns 
+ */
+export function isRecentDays() {
+  return http.request({
+    url: "/cbd/evaluation/check/recent",
+    method: Method.GET,
+    needToken: true,
+  });
+}
 
 // -------打卡-----
 /**
@@ -137,7 +149,7 @@ export function getCheckInDayCount({ memberId, storeId }) {
   });
 }
 /**
- * 获取最近打卡天数
+ * 获取最近打卡天数，若有天数，则展示 用户评分区
  * @param 
  * @returns { 
   data: {
