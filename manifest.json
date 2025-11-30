@@ -1,0 +1,310 @@
+{
+    "name" : "中品维度商城",
+    "appid" : "__UNI__770D012",
+    "description" : "",
+    "versionName" : "1.1.1",
+    "versionCode" : 1110,
+    "transformPx" : false,
+    "sassImplementationName" : "node-sass",
+    "app-plus" : {
+        "compatible" : {
+            "ignoreVersion" : true //true表示忽略版本检查提示框，HBuilderX1.9.0及以上版本支持
+        },
+        "screenOrientation" : [
+            "portrait-primary",
+            "portrait-secondary",
+            "landscape-primary",
+            "landscape-secondary"
+        ],
+        // "safearea" : {
+        //     "bottom" : {
+        //         "offset" : "none"
+        //     }
+        // },
+        /* 5+App特有相关 */
+        "usingComponents" : true,
+        "splashscreen" : {
+            "alwaysShowBeforeRender" : true,
+            "waiting" : true,
+            "autoclose" : true,
+            "delay" : 0
+        },
+        "modules" : {
+            "Payment" : {},
+            "Share" : {},
+            "Fingerprint" : {},
+            "FaceID" : {},
+            "Geolocation" : {},
+            "Maps" : {},
+            "OAuth" : {},
+            "Barcode" : {},
+            "Camera" : {},
+            "VideoPlayer" : {},
+            "Record" : {}
+        },
+        "error" : {
+            /* 404错误页面*/
+            "url" : "hybrid/html/error.html"
+        },
+        /* 模块配置 */
+        "distribute" : {
+            /* 应用发布信息 */
+            "android" : {
+                /* android打包配置 */
+                "permissions" : [
+                    "<uses-feature android:name=\"android.hardware.camera\"/>",
+                    "<uses-feature android:name=\"android.hardware.camera.autofocus\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.CALL_PHONE\"/>",
+                    "<uses-permission android:name=\"android.permission.CAMERA\"/>",
+                    "<uses-permission android:name=\"android.permission.CHANGE_NETWORK_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.CHANGE_WIFI_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.FLASHLIGHT\"/>",
+                    "<uses-permission android:name=\"android.permission.GET_ACCOUNTS\"/>",
+                    "<uses-permission android:name=\"android.permission.INSTALL_PACKAGES\"/>",
+                    "<uses-permission android:name=\"android.permission.INTERNET\"/>",
+                    "<uses-permission android:name=\"android.permission.MODIFY_AUDIO_SETTINGS\"/>",
+                    "<uses-permission android:name=\"android.permission.MOUNT_UNMOUNT_FILESYSTEMS\"/>",
+                    "<uses-permission android:name=\"android.permission.READ_LOGS\"/>",
+                    "<uses-permission android:name=\"android.permission.READ_PHONE_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.RECORD_AUDIO\"/>",
+                    "<uses-permission android:name=\"android.permission.USE_FINGERPRINT\"/>",
+                    "<uses-permission android:name=\"android.permission.VIBRATE\"/>",
+                    "<uses-permission android:name=\"android.permission.WAKE_LOCK\"/>",
+                    "<uses-permission android:name=\"android.permission.WRITE_CONTACTS\"/>",
+                    "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"/>",
+                    "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>"
+                ],
+                "abiFilters" : [ "armeabi-v7a", "arm64-v8a", "x86" ],
+                "schemes" : "zpsc,xi2ph4oiy",
+                //安卓自添加 权限  应用市场 过度索取权限
+                "permissionExternalStorage" : {
+                    "request" : "none",
+                    "prompt" : "应用保存运行状态等信息，需要获取读写手机存储（系统提示为访问设备上的照片、媒体内容和文件）权限，请允许。"
+                },
+                "permissionPhoneState" : {
+                    "request" : "none",
+                    "prompt" : "为保证您正常、安全地使用，需要获取设备识别码（部分手机提示为获取手机号码）使用权限，请允许"
+                },
+                "autoSdkPermissions" : false,
+                "targetSdkVersion" : 30,
+                "minSdkVersion" : 29
+            },
+            //安卓自添加 权限  应用市场 过度索取权限
+            "ios" : {
+                "idfa" : false,
+                "privacyDescription" : {
+                    "NSPhotoLibraryUsageDescription" : "需要用与评价上传，头像上传功能",
+                    "NSPhotoLibraryAddUsageDescription" : "保存商品图片到本地",
+                    "NSFaceIDUsageDescription" : "使用面部识别进行登录",
+                    "NSCameraUsageDescription" : "需要用与扫描二维码和商品评价图片拍摄",
+                    "NSLocationAlwaysAndWhenInUseUsageDescription" : "位置信息将用于高德地图的效果展示",
+                    "NSMicrophoneUsageDescription" : "用户上传视频时需使用音频信息"
+                },
+                "urltypes" : "zpsc,xi2ph4oiy",
+                "dSYMs" : false,
+                "capabilities" : {
+                    "entitlements" : {
+                        "com.apple.developer.associated-domains" : [ "applinks:2ph4oiy.xinstall.top", "applinks:2ph4oiy.xinstall.net" ]
+                    }
+                }
+            },
+            /* ios打包配置 */
+            "sdkConfigs" : {
+                "payment" : {
+                    "weixin" : {
+                        "__platform__" : [ "ios", "android" ],
+                        "appid" : "wx222bdac971f89df8",
+                        "UniversalLinks" : "https://zpwdsc.com/app/"
+                    },
+                    "alipay" : {
+                        "__platform__" : [ "ios", "android" ]
+                    }
+                },
+                "ad" : {},
+                "share" : {
+                    "weixin" : {
+                        "appid" : "wx222bdac971f89df8",
+                        "UniversalLinks" : "https://zpwdsc.com/app/"
+                    }
+                },
+                "oauth" : {
+                    "weixin" : {
+                        "appid" : "wx222bdac971f89df8",
+                        "appsecret" : "4661f9c377a71be562b53e8cbacbad62",
+                        "UniversalLinks" : "https://zpwdsc.com/app/"
+                    },
+                    "apple" : {},
+                    "qq" : {
+                        "appid" : "102099935",
+                        "UniversalLinks" : "https://zpwdsc.com/app/"
+                    },
+                    "sina" : {
+                        "appkey" : "2295156446",
+                        "redirect_uri" : "https://www.zpwdsc.com",
+                        "UniversalLinks" : "https://zpwdsc.com/app/"
+                    }
+                },
+                "geolocation" : {
+                    "amap" : {
+                        "__platform__" : [ "ios", "android" ],
+                        "appkey_ios" : "41da75f1416a4e1f05432b5ccb131eff",
+                        "appkey_android" : "5200d611bdb28f9632f495497ed0bc37",
+                        "name" : "amap_13901158161"
+                    },
+                    "system" : {
+                        "__platform__" : [ "ios", "android" ]
+                    }
+                },
+                "maps" : {
+                    "amap" : {
+                        "appkey_ios" : "41da75f1416a4e1f05432b5ccb131eff",
+                        "appkey_android" : "5200d611bdb28f9632f495497ed0bc37",
+                        "name" : "amap_13901158161"
+                    }
+                },
+                "push" : {}
+            },
+            "icons" : {
+                "android" : {
+                    "hdpi" : "unpackage/res/icons/72x72.png",
+                    "xhdpi" : "unpackage/res/icons/96x96.png",
+                    "xxhdpi" : "unpackage/res/icons/144x144.png",
+                    "xxxhdpi" : "unpackage/res/icons/192x192.png"
+                },
+                "ios" : {
+                    "appstore" : "unpackage/res/icons/1024x1024.png",
+                    "ipad" : {
+                        "app" : "unpackage/res/icons/76x76.png",
+                        "app@2x" : "unpackage/res/icons/152x152.png",
+                        "notification" : "unpackage/res/icons/20x20.png",
+                        "notification@2x" : "unpackage/res/icons/40x40.png",
+                        "proapp@2x" : "unpackage/res/icons/167x167.png",
+                        "settings" : "unpackage/res/icons/29x29.png",
+                        "settings@2x" : "unpackage/res/icons/58x58.png",
+                        "spotlight" : "unpackage/res/icons/40x40.png",
+                        "spotlight@2x" : "unpackage/res/icons/80x80.png"
+                    },
+                    "iphone" : {
+                        "app@2x" : "unpackage/res/icons/120x120.png",
+                        "app@3x" : "unpackage/res/icons/180x180.png",
+                        "notification@2x" : "unpackage/res/icons/40x40.png",
+                        "notification@3x" : "unpackage/res/icons/60x60.png",
+                        "settings@2x" : "unpackage/res/icons/58x58.png",
+                        "settings@3x" : "unpackage/res/icons/87x87.png",
+                        "spotlight@2x" : "unpackage/res/icons/80x80.png",
+                        "spotlight@3x" : "unpackage/res/icons/120x120.png"
+                    }
+                }
+            },
+            "splashscreen" : {
+                "iosStyle" : "common",
+                "ios" : {
+                    "storyboard" : "CustomStoryboard.zip"
+                },
+                "androidStyle" : "common",
+                "android" : {
+                    "hdpi" : "CustomStartPage/start-page.9.png",
+                    "xhdpi" : "CustomStartPage/start-page.9.png",
+                    "xxhdpi" : "CustomStartPage/start-page.9.png"
+                },
+                "useOriginalMsgbox" : true
+            }
+        },
+        "nativePlugins" : {
+            "xinstall-plugin" : {
+                "APP_KEY" : "2ph4oiy",
+                "__plugin_info__" : {
+                    "name" : "Xinstall-免填邀请码 全渠道统计 携参安装",
+                    "description" : "免填写邀请码渠道统计，用户来源追溯，一键拉起/闪装，携带参数安装，增加客户转化，清楚投放效果",
+                    "platforms" : "Android,iOS",
+                    "url" : "https://ext.dcloud.net.cn/plugin?id=3701",
+                    "android_package_name" : "com.zpwd.sc",
+                    "ios_bundle_id" : "com.zpwd.sc",
+                    "isCloud" : true,
+                    "bought" : 1,
+                    "pid" : "3701",
+                    "parameters" : {
+                        "APP_KEY" : {
+                            "des" : "Xinstall管理后台分配的appkey",
+                            "key" : "com.xinstall.APP_KEY",
+                            "value" : ""
+                        }
+                    }
+                }
+            },
+            "JQ-FileSelect" : {
+                "__plugin_info__" : {
+                    "name" : "iOS、Android文件选择原生插件",
+                    "description" : "支持Android、iOS文件选择",
+                    "platforms" : "Android,iOS",
+                    "url" : "https://ext.dcloud.net.cn/plugin?id=13578",
+                    "android_package_name" : "com.zpwd.sc",
+                    "ios_bundle_id" : "com.zpwd.sc",
+                    "isCloud" : true,
+                    "bought" : 1,
+                    "pid" : "13578",
+                    "parameters" : {}
+                }
+            }
+        }
+    },
+    "permission" : {
+        "scope.userLocation" : {
+            "desc" : "你的位置信息将用于高德地图的效果展示"
+        }
+    },
+    /* SDK配置 */
+    "quickapp" : {},
+    /* 快应用特有相关 */
+    "mp-weixin" : {
+        /* 小程序特有相关 */
+        "usingComponents" : true,
+        "appid" : "wx80a941747e393bcb",
+        "optimization" : {
+            "subPackages" : true
+        },
+        "setting" : {
+            "urlCheck" : false,
+            "minified" : true,
+            "postcss" : false,
+            "es6" : true
+        },
+        "permission" : {
+            "scope.userLocation" : {
+                "desc" : "位置信息将用于高德地图的效果展示"
+            }
+        },
+        "plugins" : {},
+        "requiredPrivateInfos" : [ "chooseLocation", "getLocation" ],
+        "lazyCodeLoading" : "requiredComponents"
+    },
+    "h5" : {
+        "devServer" : {
+            "disableHostCheck" : true
+        },
+        "router" : {
+            "mode" : "history",
+            "base" : ""
+        },
+        "sdkConfigs" : {
+            "maps" : {
+                "amap" : {
+                    "key" : "4248e8445512c09ba4587a68848a9698",
+                    "securityJsCode" : "ade9e8257d447190abfff547e7255c12",
+                    "serviceHost" : ""
+                }
+            }
+        },
+        "optimization" : {
+            "treeShaking" : {
+                "enable" : true
+            }
+        },
+        "title" : "zpsc",
+        "template" : "index.html"
+    }
+}

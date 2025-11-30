@@ -1,0 +1,16 @@
+{
+    "version" : "1",
+    "prompt" : "template",
+    "title" : "服务协议和隐私政策",
+    "message" : "本应用尊重并保护所有用户的个人隐私权，为了给您提供更准确、更有个性化的服务，本应用会按照隐私政策的规定使用和披露您的个人信息。可阅读<a href=\"https://zpwdsc.com/License?type=USER_AGREEMENT\">《服务协议》</a>和<a href=\"https://zpwdsc.com/License?type=PRIVACY_POLICY\">《隐私政策》</a>了解详细信息。如果您同意，请点击下面按钮开始接受我们的服务。",
+    "buttonAccept" : "同意并接受",
+    "buttonRefuse" : "暂不同意",
+    "hname" : "xinstall-plugin",
+    "styles" : {
+        "borderRadius" : "5px"
+    },
+    "disagreeMode" : {
+        "support" : true,
+        "loadNativePlugins" : false
+    }
+}
