@@ -38,7 +38,7 @@
       </view>
 
       <!-- 使用搜索栏组件 -->
-			<search-bar :read-only="true" @search="goPage" @click="goPage" />
+      <search-bar :read-only="true" @search="goPage" @click="goPage" />
     </view>
 
     <!-- 使用分类导航组件 -->
@@ -154,6 +154,7 @@ import searchBar from "./components/search-bar.vue";
 import categoryNav from "./components/category-nav.vue";
 import filterBar from "./components/filter-bar.vue";
 import filterDropdown from "./components/filter-dropdown.vue";
+import { getShopList, getCategories } from "@/api/shop/list/list";
 
 export default {
   components: {
@@ -170,37 +171,14 @@ export default {
         navBarHeight: 44,
         windowHeight: 0,
       },
-      categoryList: [
-        { name: "推荐", icon: "/static/icon/import.png" },
-        { name: "美食", icon: "/static/icon/food.png" },
-        { name: "休闲娱乐", icon: "/static/icon/play.png" },
-        { name: "美人丽发", icon: "/static/icon/beauty.png" },
-        { name: "按摩洗浴", icon: "/static/icon/bathing.png" },
-      ],
+      categoryList: [],
       filterData: {
-        category: [
-          {
-            name: "全部分类",
-            children: [
-              { name: "全部分类", id: 0 },
-              { name: "火锅", id: 1 },
-              { name: "烧烤烤肉", id: 2 },
-              { name: "地方菜系", id: 3 },
-              { name: "异域料理", id: 4 },
-              { name: "自助餐", id: 5 },
-              { name: "鱼肉海鲜", id: 6 },
-              { name: "小吃快餐", id: 7 },
-              { name: "饮品店", id: 8 },
-              { name: "面包甜品", id: 9 },
-              { name: "食品生鲜", id: 10 },
-            ],
-          },
-        ],
+        category: [],
         nearby: [
           {
             name: "我的附近",
             children: [
-              { name: "附近", value: "nearby" },
+              { name: "附近", value: "" },
               { name: "500m", value: "500" },
               { name: "1000m", value: "1000" },
               { name: "3000m", value: "3000" },
@@ -225,24 +203,29 @@ export default {
           },
         ],
         sort: [
-          { name: "综合排序", value: "default" },
+          { name: "综合排序", value: "comprehensive" },
           { name: "距离排序", value: "distance" },
-          { name: "评价排序", value: "rating" },
+          { name: "评价排序", value: "score" },
           { name: "销量排序", value: "sales" },
         ],
       },
       isOpenFilter: false,
       currentFilter: "",
       currentLeftIndex: 0,
-      selectedCategory: { name: "全部分类", id: 0 },
+      selectedCategory: { name: "全部分类", id: "" },
       selectedNearby: { name: "3000m", value: "3000" },
-      sortValue: "default",
+      sortValue: "comprehensive",
       currentCategoryIndex: 0,
       shopList: [],
       loadingStatus: "more",
       isHeaderFixed: false,
       filterTopThreshold: 0,
       fixedContentHeight: 0,
+      pageNumber: 1,
+      pageSize: 10,
+      total: 0,
+      storeCenter: "",
+      secondCategoryId: "",
     };
   },
   computed: {
@@ -276,7 +259,13 @@ export default {
   },
   onLoad() {
     this.initSystemInfo();
-    this.loadData();
+    this.getLocation();
+    this.loadCategories();
+  },
+  onReachBottom() {
+    if (this.loadingStatus !== "loading" && this.loadingStatus !== "noMore") {
+      this.loadData();
+    }
   },
   onPageScroll(e) {
     if (this.filterTopThreshold > 0) {
@@ -343,6 +332,7 @@ export default {
     handleSelect(item) {
       if (this.currentFilter === "category") {
         this.selectedCategory = item;
+        this.secondCategoryId = item.id || "";
       } else if (this.currentFilter === "nearby") {
         this.selectedNearby = item;
       } else if (this.currentFilter === "sort") {
@@ -355,34 +345,118 @@ export default {
     },
     refreshList() {
       this.shopList = [];
+      this.pageNumber = 1;
       this.loadingStatus = "more";
       this.loadData();
     },
     onCategoryClick(index) {
       this.currentCategoryIndex = index;
+      const category = this.categoryList[index];
+      this.secondCategoryId = category?.id || "";
       this.refreshList();
     },
-    loadData() {
-      if (this.loadingStatus === "loading") return;
+    getLocation() {
+      uni.getLocation({
+        type: "gcj02",
+        success: (res) => {
+          this.storeCenter = `${res.longitude},${res.latitude}`;
+          this.loadData();
+        },
+        fail: () => {
+          // 定位失败也加载数据
+          this.loadData();
+        },
+      });
+    },
+    async loadCategories() {
+      try {
+        const res = await getCategories({ level: 1 });
+        if (res.data.success && res.data.result) {
+          // 顶部分类导航
+          this.categoryList = [
+            { name: "推荐", icon: "/static/icon/import.png", id: "" },
+            ...res.data.result.map((item) => ({
+              name: item.name,
+              icon: item.icon || "/static/icon/food.png",
+              id: item.id,
+            })),
+          ];
+          // 筛选栏分类数据
+          this.filterData.category = [
+            {
+              name: "全部分类",
+              children: [
+                { name: "全部分类", id: "" },
+                ...res.data.result.map((item) => ({
+                  name: item.name,
+                  id: item.id,
+                })),
+              ],
+            },
+          ];
+        }
+      } catch (e) {
+        console.error("获取分类失败", e);
+      }
+    },
+    async loadData() {
+      if (this.loadingStatus === "loading" || this.loadingStatus === "noMore") return;
       this.loadingStatus = "loading";
 
-      // 测试数据
-      setTimeout(() => {
-        const newItems = Array.from({ length: 5 }, (_, i) => ({
-          id: this.shopList.length + i,
-          name: `咱家小院铁锅炖 (亦庄店) ${this.shopList.length + i}`,
-          rating: 3.3,
-          tags: ["东北菜", "亦庄"],
-          distance: "365m",
-          isOpen: true,
-          status: "营业中",
-          promo: "消费1元兑付0.5水机兑换券",
-          img: "https://via.placeholder.com/150",
-          coupon: "消费1元兑0.5水机兑换券",
-        }));
-        this.shopList = [...this.shopList, ...newItems];
+      try {
+        const params = {
+          pageNumber: this.pageNumber,
+          pageSize: this.pageSize,
+          sort: this.sortValue,
+          order: "desc",
+          storeCenter: this.storeCenter,
+          distance: this.selectedNearby.value ? (Number(this.selectedNearby.value) / 1000) : undefined,
+        };
+
+        // 分类筛选
+        if (this.secondCategoryId) {
+          params.firstCategoryId = this.secondCategoryId;
+        }
+
+        const res = await getShopList(params);
+
+        console.log("加载列表", res)
+        if (res.data.success && res.data.result) {
+          const { records, total, pages, current } = res.data.result;
+
+          // 映射接口数据到组件需要的格式
+          const newItems = records.map((item) => ({
+            id: item.id,
+            name: item.storeName,
+            image: item.cbdStorePhoto || item.storeLogo,
+            rating: item.avgScore || 0,
+            tags: [item.storeDesc].filter(Boolean),
+            distance: item.distance ? `${item.distance}m` : "",
+            isOpen: item.storeDisable === "OPEN",
+            status: item.storeDisable === "OPEN" ? "营业中" : "休息中",
+            promo: "",
+            coupon: "",
+            salesVolume: item.salesVolume,
+          }));
+
+          this.shopList = [...this.shopList, ...newItems];
+          this.total = total;
+          this.pageNumber++;
+
+          // 判断是否还有更多
+          if (current >= pages || this.shopList.length >= total) {
+            this.loadingStatus = "noMore";
+          } else {
+            this.loadingStatus = "more";
+          }
+        } else {
+          this.loadingStatus = "more";
+        }
+      } catch (e) {
+        console.error("获取商家列表失败", e);
         this.loadingStatus = "more";
-      }, 500);
+        uni.showToast({ title: "加载失败", icon: "none" });
+      }
     },
     goDetail(item) {
       uni.navigateTo({

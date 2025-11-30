@@ -10,11 +10,6 @@
       @click="handleClick('category')"
     >
       <text>{{ categoryName }}</text>
-      <!-- <uni-icons 
-				:type="current === 'category' ? 'top' : 'bottom'" 
-				size="12" 
-				:color="current === 'category' ? '#FFC300' : '#666'"
-			></uni-icons> -->
       <image
         class="arrow"
         :src="`/static/icon/${current === 'category' ? 'up' : 'down'}.png`"
@@ -31,11 +26,6 @@
       @click="handleClick('nearby')"
     >
       <text>{{ nearbyName }}</text>
-      <!-- <uni-icons 
-				:type="current === 'nearby' ? 'top' : 'bottom'" 
-				size="12" 
-				:color="current === 'nearby' ? '#FFC300' : '#666'"
-			></uni-icons> -->
       <image
         class="arrow"
         :src="`/static/icon/${current === 'nearby' ? 'up' : 'down'}.png`"
@@ -52,11 +42,6 @@
       @click="handleClick('sort')"
     >
       <text>{{ sortName }}</text>
-      <!-- <uni-icons 
-				:type="current === 'sort' ? 'top' : 'bottom'" 
-				size="12" 
-				:color="current === 'sort' ? '#FFC300' : '#666'"
-			></uni-icons> -->
       <image
         class="arrow"
         :src="`/static/icon/${current === 'sort' ? 'up' : 'down'}.png`"
